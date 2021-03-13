@@ -1,4 +1,4 @@
-## Welcome to GitHub Pages
+## ANLP Fake News Detection Project
 
 You can use the [editor on GitHub](https://github.com/alimevren/anlp-fakenewsdetection/edit/gh-pages/index.md) to maintain and preview the content for your website in Markdown files.
 
