@@ -4,13 +4,21 @@ In the recent years, if we had to mention a trending term for the field of commu
 
 
 ###2  Related Work
+
 ###3  Model
+
 ###4  Data
+
 ####4.1  FakeNewsNet
+
 ####4.2  SatiricLR
+
 ####4.3  OnionOrNot
+
 ###5  Experiments
+
 ###6  Discussion
+
 ###7  Conclusion
 
 
