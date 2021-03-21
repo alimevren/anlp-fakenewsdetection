@@ -1,175 +1,42 @@
 ## ANLP Fake News Detection Project
 
-In the recent years, if we had to mention a trending term for the field of communication, this wouldbe undoubtedly fake news. This has been provoked and pushed given the worldwide surge of socialmedia. Fake news term refers to news that contain purposely false information, which causes a negative impact on both readers and society as a whole. Considering this, it’s no surprise that different projects and companies such as Newscheck, Newtralor Factmata have aroused to tackle this problem of detecting news with deceptive words which make online users infected and deceived from this false information. 
+In the recent years, if we had to mention a trending term for the field of communication, this would be undoubtedly fake news. This has been provoked and pushed given the worldwide surge of socialmedia. Fake news term refers to news that contain purposely false information, which causes a negative impact on both readers and society as a whole. Considering this, it’s no surprise that different projects and companies such as Newscheck, Newtralor Factmata have aroused to tackle this problem of detecting news with deceptive words which make online users infected and deceived from this false information. 
 
 For Natural Language Processing, this means a extremely promising field of research, as not only the words but also the sentence build-up influence how readers assume the information. Despite the amount of attention this topic has received in the last few years, it wasn’t very accessible to find fake news data sets that ease the task until recently.
 
-In our project, a model will be trained to distinguish real news from fake news. Additionally, datasets with the inclusion of satirical news and headlines from the onion and actual news that sound satirical from r/NotTheOnion will be added to find whether the implemented model is able to differentiate between these two types of news. This last field of work has gotten less attention than simply fake news detection.
+In our project, a model will be trained to distinguish real news from fake news. Additionally, datasets with the inclusion of satirical news and headlines from the onion and actual news that sound satirical from r/NotTheOnion will be added to find whether the implemented model is able to differentiate between these two types of news. Finally, project aims if it is possible to detect AI-generated headlines of realnews and how do these results compare in relation to human-generated fake news. The effectiveness of our proposed model will be concluded, leading to the analysis of what is to come in the fight against fake news.
 
 ### Related Work
+Previous studies on fake news detection contain different deep learning approaches. LSTMs and BERT are techniques largely used in those studies. Some of those models utilize multi-modal features instead of only textual context to improve classification results. Alternatively, some other studies only use text corpus and metadata such as source of information, date and author for fake news detection with different word embeddings and classification models. Our approach currently focusing detection using title/headline of the article only and as a future research could be extended with more input data for better detection.
 
-### Model
+### Approach
+In our project, we formulated the problem as a classification problem for fake news. Either satirical or not, we would like to differentiate fake news from the real ones using a BERT [Link](https://github.com/google-research/bert) pre-trained language model for English. BERT is a method of pre-training language representations, pre-trained general-purpose "language understanding" model on a large text corpus (like Wikipedia). BERT outperforms previous methods mainly due it being the first unsupervised, deeply bidirectional system for pre-training NLP.
+
+BERT is currently one of the state of the art methods in natural language processing with its parameter size and pre-training approach. Even though there are bigger models with higher parameter sizes such as GPT-2 and GPT-3, we had to select a computationally feasible model for the project. Since we have limited computing resources in terms of GPU and disk size, it was preferred to try BERT and experiment its performance for fake news detection classification problem. Google BERT team released different versions of the pre-trained BERT model which BERT-base model stands out as the most commonly used. Instead of using BERT-base-uncased model which still takes a long time to train, we preferred to use BERT-medium one released from the same team mentioned in the paper Well-Read students learn better [Link](https://github.com/google-research/bert). The BERT-medium model used comes from the HuggingFace transformers library [Link](https://huggingface.co/prajjwal1/bert-medium). This allowed us to be able run multiple training and evaluation cycles, as well as more iterations during project experiments.
+
+In our implementation part we used Chris McCormick's BERT Fine-Tuning Tutorial with PyTorch [Link](http://mccormickml.com/2019/07/22/BERT-fine-tuning/) as a basis, and adding necessary functions whenever needed. Firstly, we created pandas DataFrame objects with title and label values (0, 1 - being 0 for fake news, and 1 for real news) for the model training and testing. After loading our pre-trained BERT model and tokenizer using BertForSequenceClassification for two classes, the data set is split into a train, validation and test set (using a 80-10-10 ratio).
 
 ```markdown
-
-    # Setting input data
-    titles = d_all_fnn.Title.values
-    labels = d_all_fnn.Label.values
-    input_ids, attention_masks, labels = tokenize(titles, labels)
-
-    dataset = TensorDataset(input_ids, attention_masks, labels)
-    # Create a 80-10-10 train-validation-test split.
-
-    # Calculate the number of samples to include in each set.
-    train_size = int(0.8 * len(dataset))
-    val_size = int(0.1 * len(dataset))
-    test_size= len(dataset) - train_size - val_size
-
-    # Divide the dataset by randomly selecting samples.
-    train_dataset, val_dataset, test_dataset = random_split(dataset, [train_size, val_size, test_size])
-
-    batch_size = 8
-
-    # Create the DataLoaders for our training and validation sets.
-    # We'll take training samples in random order.
-    train_dataloader = DataLoader(
-        train_dataset,  # The training samples.
-        sampler=RandomSampler(train_dataset),  # Select batches randomly
-        batch_size=batch_size  # Trains with this batch size.
-    )
-
-    # For validation the order doesn't matter, so we'll just read them sequentially.
-    validation_dataloader = DataLoader(
-        val_dataset,  # The validation samples.
-        sampler=SequentialSampler(val_dataset),  # Pull out batches sequentially.
-        batch_size=batch_size  # Evaluate with this batch size.
-    )
-
-    # Load BertForSequenceClassification, the pretrained BERT model with a single
-    # linear classification layer on top.
-    
-    model = BertForSequenceClassification.from_pretrained(
-        bert_model_name,  # Use the 12-layer BERT model, with an uncased vocab.
-        num_labels=args_nclasses,  # The number of output labels--2 for binary classification.
-        # You can increase this for multi-class tasks.
-        output_attentions=False,  # Whether the model returns attentions weights.
-        output_hidden_states=False,  # Whether the model returns all hidden-states.
-    ).to(device)
-
-    model.train()
-
-    # Tell pytorch to run this model on the GPU.
-    model.cuda()
-
-    # Get all of the model's parameters as a list of tuples.
-    params = list(model.named_parameters())
-
-    print('The BERT model has {:} different named parameters.\n'.format(len(params)))
-
-    print('==== Embedding Layer ====\n')
-
-    for p in params[0:5]:
-        print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
-
-    print('\n==== First Transformer ====\n')
-
-    for p in params[5:21]:
-        print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
-
-    print('\n==== Output Layer ====\n')
-
-    for p in params[-4:]:
-        print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
-
-    optimizer = AdamW(model.parameters(),
-                      lr=2e-5,  # args.learning_rate - default is 5e-5, our notebook had 2e-5
-                      eps=1e-8  # args.adam_epsilon  - default is 1e-8.
-                      )
-
-    total_steps = len(train_dataloader) * args_epochs
-
-    # Create the learning rate scheduler.
-    scheduler = get_linear_schedule_with_warmup(optimizer,
-                                                num_warmup_steps=0,  # Default value in run_glue.py
-                                                num_training_steps=total_steps)
-
-    random.seed(args_seed)
-    np.random.seed(args_seed)
-    torch.manual_seed(args_seed)
-    torch.cuda.manual_seed_all(args_seed)
-
-    # TEST SET
-    prediction_dataloader = DataLoader(
-        test_dataset,  # The test samples.
-        sampler=SequentialSampler(test_dataset),  # Pull out batches sequentially.
-        batch_size=1  # Evaluate with this batch size.
-    )
-
-    # Put model in evaluation mode
-    model.eval()
-
-    # Tracking variables
-    predictions, true_labels, logits_predictions = [], [], []
-
-    # Predict
-    for batch in prediction_dataloader:
-        # Add batch to GPU
-        batch = tuple(t.to(device) for t in batch)
-
-        # Unpack the inputs from our dataloader
-        b_input_ids, b_input_mask, b_labels = batch
-
-        # Telling the model not to compute or store gradients, saving memory and
-        # speeding up prediction
-        with torch.no_grad():
-            # Forward pass, calculate logit predictions
-            outputs = model(b_input_ids, token_type_ids=None,
-                            attention_mask=b_input_mask)
-
-        logits = outputs.logits
-
-        # Move logits and labels to CPU
-        logits = logits.detach().cpu().numpy()
-        label_ids = b_labels.to('cpu').numpy()
-
-        # Store predictions and true labels
-        pred_labels_i = np.argmax(logits, axis=1).flatten()
-        predictions.extend(pred_labels_i)
-
-        pred_labels_i = logits.squeeze()[1]
-        logits_predictions.append(pred_labels_i)
-
-        true_labels.extend(label_ids)
-
 
 ```
 
 ### Data
-
-#### FakeNewsNet
-
-#### SatiricLR
-
-#### OnionOrNot
-
-### Experiments
-
-### Discussion
+Datasets used during the project listed as follows.
+1. FakeNewsNet
+2. ISOT Fake News Dataset
+3. SatiricLR
+4. OnionOrNot
+5. RealNews
 
 ### Conclusion
+Extensive experiments have been performed during the project, obtaining different results. We can positively highlight that the detection of fake news with our trained models on the ISOT data set achieved confidently positive accuracy values, being thus our biggest success for our model. Unfortunately, our satirical news experiments achieved mixed results. Although retraining our model to include the SatiricLR data set gave us an even higher accuracy than our previous trained model, we did not notice any significant difference between our two differently trained model tested on the OnionOrNot data set. As we already highlighted this lack of expected improvement could be the size difference between the ISOT and SatiricLR data sets. Although, another big factor could be the missing news article content itself, as we only trained and tested on headlines. It seems that the context of the news articles is more important when working with satirical news than with regular news, but this is a topic for future research. Another future research possibility in the topic of actual satirical news and satirical seeming news, could be to compare the average accuracy of a model and the average accuracy of real people on differentiating between the two.
+For the topic of machine generated headlines we have observed that these generated headlines seem to be a much bigger struggle for our implementation than we originally thought. The improvement could lie in considering the generated news in the training phase.
+The topic of fake news detection has many more problems and research proposals that are still arising, making this a very interesting field of work for the upcoming year. However, the detection of satirical news has not grabbed as much attention in comparison, and considering our results in this project we could conclude that this field potentially needs more factors to be taking into account.
 
-```markdown
-Syntax highlighted code block
-
-- Bulleted
-- List
-
-1. Numbered
-2. List
 
 **Bold** and _Italic_ and `Code` text
 
-[Link](url) and ![Image](src)
+ and ![Image](src)
 ```
 
 For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
